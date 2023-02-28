@@ -1,4 +1,3 @@
-import { Channel } from 'discord.js';
 import { StockItem } from './stock';
 
 export interface Product {
@@ -9,5 +8,5 @@ export interface Product {
   imageUrl?: string;
   instructions?: string;
   stockItems: StockItem[],
-  channel: Channel,
+  discordChannelId: string,
 }
