@@ -1,4 +1,4 @@
-import { Client, CommandInteraction } from 'discord.js';
+import { Client } from 'discord.js';
 import { commands } from '../commands';
 
 export function onCommandInteraction(client: Client) {

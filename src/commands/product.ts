@@ -1,11 +1,12 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CommandInteraction, Interaction, Message, SlashCommandBuilder, SlashCommandStringOption, SlashCommandSubcommandBuilder, SlashCommandSubcommandGroupBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CommandInteraction, Interaction, Message, PermissionFlagsBits, SlashCommandBuilder, SlashCommandStringOption, SlashCommandSubcommandBuilder, SlashCommandSubcommandGroupBuilder } from 'discord.js';
 import { CustomCommandHandler } from '.';
-import api from '../api';
+import { listProductsByGuildId } from '../api/product';
 import { Product } from '../types/product';
 import { getProductInfoEmbed } from '../utils/embed';
 
 const productsCommand: CustomCommandHandler = {
   data: new SlashCommandBuilder()
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .setName('produtos')
     .setDescription('Gerenciar produtos que serão comercializados no seu servidor.')
     .addSubcommand((subcommand) => subcommand.setName('criar').setDescription('Cria um produto'))
@@ -15,11 +16,7 @@ const productsCommand: CustomCommandHandler = {
 
 export async function handleProductCommand(interaction: CommandInteraction) {
   const subCommand = interaction.options.data[0].name;
-  if (!subCommand) return sendHelpMessage(interaction);
   switch (subCommand) {
-    case 'ajuda':
-      sendHelpMessage(interaction);
-      break;
     case 'criar':
       await createProduct(interaction);
       break;
@@ -27,10 +24,6 @@ export async function handleProductCommand(interaction: CommandInteraction) {
       await listProducts(interaction);
       break;
   }
-}
-
-function sendHelpMessage(interaction: CommandInteraction) {
-  interaction.reply('Ajuda');
 }
 
 async function createProduct(interaction: CommandInteraction) {
@@ -44,7 +37,8 @@ async function createProduct(interaction: CommandInteraction) {
 
 async function listProducts(interaction: CommandInteraction) {
   try {
-    const { data: products } = await api.get(`products/list/${interaction.guildId}`);
+    if (!interaction.guildId) return;
+    const { data: products } = await listProductsByGuildId(interaction.guildId);
     if (products) {
       products.forEach((product: Product) => {
         const embed = getProductInfoEmbed(product);
@@ -62,7 +56,7 @@ async function listProducts(interaction: CommandInteraction) {
       });
     }
   } catch {
-    interaction.channel?.send('Não foi possível listar os produtos. Tente novamente mais tarde.')
+    interaction.reply({ content: 'Não foi possível listar os produtos. Tente novamente mais tarde.', ephemeral: true });
   }
 }
 export { productsCommand };

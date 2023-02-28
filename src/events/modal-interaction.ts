@@ -1,4 +1,4 @@
-import { ButtonBuilder, ButtonStyle, ChannelType, Client, CommandInteraction, ModalSubmitInteraction, TextChannel } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, Client, ModalSubmitInteraction, TextChannel } from 'discord.js';
 import { getProductIdFromComponentId } from '.';
 import { createProduct, getProductById, updateProduct } from '../api/product';
 import { getProductInfoEmbed } from '../utils/embed';
@@ -31,7 +31,7 @@ async function handleModalSubmitInteraction(interaction: ModalSubmitInteraction)
 
 async function handleEditSubmit(interaction: ModalSubmitInteraction, requestBody: Record<string, any>, productId: string) {
   try {
-    const { data: oldProduct } = await getProductById(Number(productId));
+    const { data: oldProduct } = await getProductById(+productId);
     // This enables to delete the optional fields
     if (oldProduct.imageUrl && !requestBody.imageUrl)
       requestBody.imageUrl = null;
@@ -44,10 +44,11 @@ async function handleEditSubmit(interaction: ModalSubmitInteraction, requestBody
       await channel.bulkDelete(100, true);
       sendBuyEmbedMessage(channel, product.id);
     }
-    interaction.reply({ content: `Produto editado com sucesso!` });
+    interaction.reply({ content: `Produto editado com sucesso!`, ephemeral: true });
   } catch {
-    interaction.reply({ content: `Não foi possível editar o produto!` });
+    interaction.reply({ content: 'Não foi possível editar o produto!', ephemeral: true });
   }
+  interaction.message?.delete();
 }
 
 async function handleCreateSubmit(interaction: ModalSubmitInteraction, requestBody: Record<string, any>) {
@@ -58,23 +59,26 @@ async function handleCreateSubmit(interaction: ModalSubmitInteraction, requestBo
         ...requestBody, discordChannelId: channel.id,
         discordGuildId: channel.guildId
       });
-      interaction.reply({ content: `Canal de venda criado: ${channel.toString()}` });
+      interaction.reply({ content: `Canal de venda criado: ${channel.toString()}`, ephemeral: true });
       sendBuyEmbedMessage(channel, product.id);
     } catch {
-      interaction.reply({ content: 'Não foi possível criar o canal de venda.' })
+      interaction.reply({ content: 'Não foi possível criar o canal de venda.', ephemeral: true })
     }
   }
+  interaction.message?.delete();
 }
 
 async function sendBuyEmbedMessage(channel: TextChannel, productId: number) {
   try {
     const { data: product } = await getProductById(productId);
     const productEmbed = getProductInfoEmbed(product);
+
     const buyButton = new ButtonBuilder()
       .setCustomId(`buy-product-${productId}`)
       .setLabel('Comprar')
       .setStyle(ButtonStyle.Success);
     // @ts-ignore
     channel.send({ embeds: [productEmbed], components: [new ActionRowBuilder({ components: [buyButton] })] });
-  } catch { }
+  } catch {
+  }
 }

@@ -11,3 +11,7 @@ export async function createProduct(body: Record<string, any>) {
 export async function updateProduct(productId: number, body: Record<string, any>) {
   return api.put(`products/${productId}`, body);
 }
+
+export async function listProductsByGuildId(guildId: string) {
+  return api.get(`products/list/${guildId}`);
+}

@@ -1,5 +1,5 @@
-import { CommandInteraction, Interaction, REST, Routes } from 'discord.js';
-import { DISCORD_CLIENT_ID, DISCORD_GUILD_ID, DISCORD_TOKEN } from '../config';
+import { CommandInteraction, REST, Routes } from 'discord.js';
+import { DISCORD_APP_ID, DISCORD_GUILD_ID, DISCORD_TOKEN } from '../config';
 import { productsCommand } from './product';
 
 export interface CustomCommandHandler {
@@ -15,7 +15,7 @@ const rest = new REST({ version: '10' })
   try {
     const body = commands.map((command) => command.data);
     await rest.put(
-      Routes.applicationGuildCommands(DISCORD_CLIENT_ID, DISCORD_GUILD_ID), { body }
+      Routes.applicationGuildCommands(DISCORD_APP_ID, DISCORD_GUILD_ID), { body }
     );
   } catch {
     console.log('Não foi possível carregar os comandos.');
