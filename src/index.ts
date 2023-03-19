@@ -1,7 +1,7 @@
-import { Client, Partials } from 'discord.js';
-import { handleProductCommand } from './commands/product';
+import { Client, Partials, TextChannel } from 'discord.js';
 import { DISCORD_TOKEN } from './config';
 import registerListeners from './events';
+import { registerRoutes } from './routes';
 
 const client = new Client({
   intents: ['Guilds', 'DirectMessages', 'GuildMessages', 'MessageContent'],
@@ -9,5 +9,6 @@ const client = new Client({
 });
 
 registerListeners(client);
+registerRoutes(client);
 
 client.login(DISCORD_TOKEN);
