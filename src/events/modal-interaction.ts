@@ -1,7 +1,10 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, Client, ModalSubmitInteraction, TextChannel } from 'discord.js';
+import { ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, ChannelType, Client, Embed, ModalSubmitInteraction, TextChannel } from 'discord.js';
 import { getProductIdFromComponentId } from '.';
+import { createOrder } from '../api/order';
+import { getPaymentById } from '../api/payment';
 import { createProduct, getProductById, updateProduct } from '../api/product';
-import { getProductInfoEmbed } from '../utils/embed';
+import { getOrderEmbed, getProductInfoEmbed } from '../utils/embed';
+import { createPurchaseChannel } from '../utils/purchase-channel';
 
 export function onModalInteraction(client: Client) {
   client.on('interactionCreate', (interaction) => {
@@ -24,14 +27,15 @@ async function handleModalSubmitInteraction(interaction: ModalSubmitInteraction)
   }
 
   if (modalCustomId.startsWith('edit-product-modal') && productId)
-    handleEditSubmit(interaction, requestBody, productId);
+    handleEditSubmit(interaction, requestBody, +productId);
   else if (modalCustomId.startsWith('create-product-modal'))
     handleCreateSubmit(interaction, requestBody);
+  else if (modalCustomId.startsWith('buy-product-modal') && productId) handleBuySubmit(interaction, requestBody, +productId);
 }
 
-async function handleEditSubmit(interaction: ModalSubmitInteraction, requestBody: Record<string, any>, productId: string) {
+async function handleEditSubmit(interaction: ModalSubmitInteraction, requestBody: Record<string, any>, productId: number) {
   try {
-    const { data: oldProduct } = await getProductById(+productId);
+    const { data: oldProduct } = await getProductById(productId);
     // This enables to delete the optional fields
     if (oldProduct.imageUrl && !requestBody.imageUrl)
       requestBody.imageUrl = null;
@@ -79,6 +83,30 @@ async function sendBuyEmbedMessage(channel: TextChannel, productId: number) {
       .setStyle(ButtonStyle.Success);
     // @ts-ignore
     channel.send({ embeds: [productEmbed], components: [new ActionRowBuilder({ components: [buyButton] })] });
+  } catch {
+  }
+}
+
+async function handleBuySubmit(interaction: ModalSubmitInteraction, requestBody: Record<string, any>, productId: number) {
+  try {
+    const { data: order } = await createOrder({
+      productId,
+      authorDiscordId: interaction.user.id,
+      ...requestBody
+    });
+    interaction.deferReply({ ephemeral: true });
+    const channel = await createPurchaseChannel(interaction);
+    if (!channel) return;
+
+    const embed = await getOrderEmbed(order);
+    const { data: { body: payment } } = await getPaymentById(order.paymentId);
+    interaction.editReply({ content: `Um canal foi criado com o produto que irá comprar e o QR Code para pagar: ${channel.toString()}` });
+
+    const qrCode = Buffer.from(payment.point_of_interaction.transaction_data.qr_code_base64, 'base64');
+    const attachment = new AttachmentBuilder(qrCode, { name: 'qrcode.png' });
+    embed.setImage('attachment://qrcode.png');
+
+    channel.send({ embeds: [embed], files: [attachment] });
   } catch {
   }
 }

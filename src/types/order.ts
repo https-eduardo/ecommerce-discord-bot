@@ -1,6 +1,8 @@
+import { Product } from './product';
+
 export interface Order {
   email: string;
-  productId: number;
+  product: Product;
   status: string;
   authorDiscordId: string;
   paymentId: number;
