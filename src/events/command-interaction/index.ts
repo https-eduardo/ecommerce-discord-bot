@@ -1,8 +1,8 @@
-import { Client } from 'discord.js';
-import { commands } from '../commands';
+import { Client } from "discord.js";
+import { commands } from "../../commands";
 
 export function onCommandInteraction(client: Client) {
-  client.on('interactionCreate', (interaction) => {
+  client.on("interactionCreate", (interaction) => {
     if (interaction.isCommand()) {
       commands.forEach((cmd) => {
         if (interaction.commandName === cmd.data.name) {

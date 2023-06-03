@@ -9,4 +9,5 @@ export interface Product {
   instructions?: string;
   stockItems: StockItem[],
   discordChannelId: string,
+  [index: string]: any,
 }
